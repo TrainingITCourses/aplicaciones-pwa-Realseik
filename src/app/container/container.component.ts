@@ -1,17 +1,19 @@
-import { LoadLanzamientos } from './../reducers/lanzamientos.actions';
-import { CriteriosState } from './../reducers/criterio.reducer';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
-import { Store } from '@ngrx/store';
-import { GlobalState } from '../reducers';
-import { map } from '../../../node_modules/rxjs/operators';
-import { LoadCriterios } from '../reducers/criterio.actions';
-import { LoadValors } from '../reducers/valor.actions';
+import { LoadLanzamientos } from "./../reducers/lanzamientos.actions";
+import { CriteriosState } from "./../reducers/criterio.reducer";
+import { ChangeDetectionStrategy, Component, OnInit } from "@angular/core";
+import { Observable } from "rxjs";
+import { Store } from "@ngrx/store";
+import { GlobalState } from "../reducers";
+import { map } from "../../../node_modules/rxjs/operators";
+import { LoadCriterios } from "../reducers/criterio.actions";
+import { LoadValors } from "../reducers/valor.actions";
+import { SwUpdate } from "../../../node_modules/@angular/service-worker";
+import { UpdateAvailableEvent } from "../../../node_modules/@angular/service-worker/src/low_level";
 
 @Component({
-  selector: 'app-container',
-  templateUrl: './container.component.html',
-  styleUrls: ['./container.component.css'],
+  selector: "app-container",
+  templateUrl: "./container.component.html",
+  styleUrls: ["./container.component.css"],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContainerComponent implements OnInit {
@@ -20,12 +22,28 @@ export class ContainerComponent implements OnInit {
   public lanzamientos$: Observable<any>;
   public lanzamientos = [];
   private criterio: string;
-
-  constructor(private store: Store<GlobalState>) {}
+  public version = "2";
+  constructor(private store: Store<GlobalState>, private swUpdate: SwUpdate) {}
 
   ngOnInit() {
     this.loadData();
     this.observeLaunches();
+    this.observeForUpdates();
+  }
+
+  observeForUpdates() {
+    if (this.swUpdate.isEnabled) {
+      this.swUpdate.available.subscribe((event: UpdateAvailableEvent) => {
+        if (confirm("Nueva version disponible")) {
+          window.location.reload();
+        }
+        // this.dialogs
+        //   .confirm("There is a new version", "Click ok to install")
+        //   .subscribe(res => {
+        //     if (res) window.location.reload();
+        //   });
+      });
+    }
   }
 
   loadData = () => {
@@ -33,19 +51,19 @@ export class ContainerComponent implements OnInit {
   };
 
   observeLaunches = () => {
-    this.criterios$ = this.store.select('criterios').pipe(
+    this.criterios$ = this.store.select("criterios").pipe(
       map((stateCriterios: CriteriosState) => {
         return stateCriterios.criterios;
       })
     );
 
-    this.valores$ = this.store.select('valores').pipe(
+    this.valores$ = this.store.select("valores").pipe(
       map(stateValores => {
         return stateValores.valores;
       })
     );
 
-    this.lanzamientos$ = this.store.select('lanzamientos').pipe(
+    this.lanzamientos$ = this.store.select("lanzamientos").pipe(
       map(stateLanzamientos => {
         return stateLanzamientos.lanzamientos;
       })
